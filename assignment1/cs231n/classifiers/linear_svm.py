@@ -95,9 +95,13 @@ def svm_loss_vectorized(W, X, y, reg):
   # loss.                                                                     #
   #############################################################################
   num_train = X.shape[0]
-  X_copy = X
-  X_copy[range(num_train), y] = 0
-  dW = X_copy.T.dot((margins > 0)) / num_train
+  d = np.ones((N, C))
+  d[range(num_train), y] = 0
+  k = -np.sum(d > 0, axis=0)
+  p = np.zeros((N, C))
+  p[range(N), y] = k
+  z = p + d
+  dW = 
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
