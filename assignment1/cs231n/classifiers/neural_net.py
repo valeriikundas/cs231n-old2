@@ -75,7 +75,8 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    pass
+    h1 = np.maximum(X.dot(W1) + b1, 0)
+    scores = h1.dot(W2) + b2
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -92,7 +93,15 @@ class TwoLayerNet(object):
     # in the variable loss, which should be a scalar. Use the Softmax           #
     # classifier loss.                                                          #
     #############################################################################
-    pass
+    exp_scores = np.exp(scores)
+    cor_scores = exp_scores[range(N), y].reshape(-1,1)
+    sum_scores = np.sum(exp_scores, axis=1, keepdims=True)
+    correct_probs = cor_scores / sum_scores
+    
+    data_loss = np.sum(-np.log(correct_probs)) / N
+    reg_loss = reg * np.sum(np.square(W1)) + reg * np.sum(np.square(W2))
+    
+    loss = data_loss + reg_loss
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -104,7 +113,29 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    pass
+    C = b2.shape[0]
+    
+    #dcor_probs = 1 / correct_probs * (-np.full((N, 1), 1 / N))
+    #dcor_scores = dcor_probs * (1 / np.sum(exp_scores, axis=1, keepdims=True))
+    #dexp_scores = np.zeros((N, C))
+    #dexp_scores[range(N), y] += dcor_scores.reshape(-1)  # (4)
+    #done_div_sum = dcor_probs * cor_scores  # (1)
+    #dsum = done_div_sum * (-1 / np.square(sum_scores))  # (2)
+    #dexp_scores += sum_scores  # (3)
+    #dscores = dexp_scores * np.exp(scores)
+    
+    d = np.full((N,), 1 / N)
+    d_cor_scores = -d
+    d_exp_scores = np.zeros((N, C))
+    d_exp_scores += (1 / d).reshape(-1, 1)
+    d_scores = np.zeros((N, C)) + d_exp_scores * np.exp(scores)
+    d_scores[range(N), y] += -d
+    
+    grads['b2'] = np.sum(d_scores, axis=0)
+    
+    grads['W2'] = h1.T.dot(d_scores) + 2 * reg * self.params['W2']
+    grads['b1'] = 0
+    grads['W1'] = 0
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
